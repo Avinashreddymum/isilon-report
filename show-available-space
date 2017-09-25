@@ -1,0 +1,22 @@
+isi storagepool list -v |awk -vhostname="$(hostname)" 'function num2gb(n) { if (n ~ /T$/) return n / 1; return n / 1024; }
+    /Requested Protection:/ { parity=substr($NF,length($NF)-1,1) }
+    /Nodes:/ { nodes=$NF }
+    /HDD Total/ { hdd_total=$NF }
+    /HDD Used/ { hdd_used=num2gb($NF) }
+    END {
+        multiplier=nodes-parity
+        total=hdd_total/nodes*multiplier
+        used=hdd_used/nodes
+        eu=used*multiplier*0.8
+        et=total*0.8
+        used1=eu/et*100
+        print hostname ": " "\t","parity=" parity
+        print "\t""\t""\t","NodeNumber=" nodes
+        printf ("\t\t\tTotal=%.1f\n", total, TB);
+        printf "\t\t\tEffective Total volume=%.1f\n", total*0.8, " TB"
+        printf ("\t\t\tUSED=%.1f%%\n", used1)
+        printf "\t\t\tEffective used=%.1f TB\n", used*multiplier*0.8, " TB"
+        printf "\t\t\tAvailable volume=%.1f TB\n", (hdd_total-hdd_used)/nodes*multiplier*0.8, " TB"
+        printf "\t\t\tHDD Total=%.1f\n", hdd_total}'
+        isi_classic snapshot usage | tail -n 1 | awk '{printf "\t\t\tSnapshot USED %=%.1f%%\n", $4}'
+        isi_classic snapshot usage | tail -n -1 | awk '{ print "\t\t\tSnapshot USED=" $1}'
